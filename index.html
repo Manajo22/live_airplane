@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIVE GLOBAL FLIGHT TRACKER 2000</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+New:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(45deg, #000080, #4B0082, #000000);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            color: #00FF00;
+            overflow: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to right, #000080, #4B0082);
+            border: 3px outset #00FF00;
+            padding: 8px 15px;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 0 20px #00FF00;
+        }
+
+        .title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #FFFF00;
+            text-shadow: 2px 2px 4px #000000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .blink {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid #00FF00;
+            padding: 3px 6px;
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border: 1px solid white;
+        }
+
+        .tailwind { background: #00FF00; }
+        .headwind { background: #FF0000; }
+        .crosswind { background: #FFFF00; }
+
+        #map {
+            position: absolute;
+            top: 50px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            border: 2px inset #00FF00;
+        }
+
+        .leaflet-container {
+            background: #000040 !important;
+        }
+
+        .controls {
+            position: fixed;
+            top: 70px;
+            left: 10px;
+            background: linear-gradient(to bottom, #808080, #404040);
+            border: 3px outset #C0C0C0;
+            padding: 10px;
+            z-index: 1000;
+            min-width: 200px;
+            font-size: 11px;
+            box-shadow: 5px 5px 10px #000000;
+        }
+
+        .control-group {
+            margin-bottom: 8px;
+            border: 1px inset #C0C0C0;
+            padding: 5px;
+            background: #E0E0E0;
+            color: #000000;
+        }
+
+        .control-label {
+            font-weight: bold;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            font-size: 10px;
+        }
+
+        .toggle-btn, .api-btn {
+            background: linear-gradient(to bottom, #C0C0C0, #808080);
+            color: #000000;
+            border: 2px outset #C0C0C0;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            width: 100%;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .toggle-btn:hover, .api-btn:hover {
+            background: linear-gradient(to bottom, #E0E0E0, #A0A0A0);
+        }
+
+        .toggle-btn:active, .api-btn:active {
+            border: 2px inset #C0C0C0;
+        }
+
+        .toggle-btn.active, .api-btn.active {
+            background: linear-gradient(to bottom, #00FF00, #008000);
+            color: #000000;
+            box-shadow: 0 0 5px #00FF00;
+        }
+
+        .stats {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: linear-gradient(to bottom, #808080, #404040);
+            border: 3px outset #C0C0C0;
+            padding: 10px;
+            z-index: 1000;
+            font-size: 11px;
+            min-width: 200px;
+            box-shadow: 5px 5px 10px #000000;
+        }
+
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+            padding: 2px;
+            background: #000080;
+            border: 1px inset #C0C0C0;
+            color: #00FF00;
+        }
+
+        .api-status {
+            position: fixed;
+            top: 70px;
+            right: 10px;
+            background: linear-gradient(to bottom, #808080, #404040);
+            border: 3px outset #C0C0C0;
+            padding: 10px;
+            z-index: 1000;
+            min-width: 180px;
+            font-size: 11px;
+            box-shadow: 5px 5px 10px #000000;
+        }
+
+        .api-info {
+            color: #00FF00;
+            background: #000080;
+            border: 1px inset #C0C0C0;
+            padding: 3px;
+            margin: 2px 0;
+            font-size: 10px;
+        }
+
+        .economic-display {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: linear-gradient(to bottom, #008000, #004000);
+            border: 3px outset #00FF00;
+            padding: 15px;
+            z-index: 1000;
+            min-width: 280px;
+            font-size: 12px;
+            box-shadow: 5px 5px 10px #000000;
+            color: #00FF00;
+        }
+
+        .economic-header {
+            background: #FFFF00;
+            color: #000000;
+            padding: 5px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border: 1px outset #FFFF00;
+        }
+
+        .economic-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 3px;
+            background: #000080;
+            border: 1px inset #C0C0C0;
+        }
+
+        .economic-value {
+            color: #FFFF00;
+            font-weight: bold;
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(to bottom, #000080, #000040);
+            border: 4px outset #00FF00;
+            padding: 20px;
+            text-align: center;
+            z-index: 2000;
+            color: #FFFF00;
+            box-shadow: 0 0 30px #00FF00;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #000080;
+            border-top: 3px solid #00FF00;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            position: fixed;
+            top: 80px;
+            right: 200px;
+            background: linear-gradient(to bottom, #FF0000, #800000);
+            color: #FFFF00;
+            border: 3px outset #FF0000;
+            padding: 10px;
+            z-index: 1000;
+            display: none;
+            font-size: 11px;
+            max-width: 250px;
+        }
+
+        .flight-popup {
+            font-family: 'Courier New', monospace;
+            background: #000080;
+            color: #00FF00;
+            border: 2px outset #00FF00;
+            font-size: 11px;
+        }
+
+        .popup-header {
+            background: #FFFF00;
+            color: #000000;
+            padding: 3px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .popup-row {
+            margin: 2px 0;
+            padding: 1px 3px;
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to right, #C0C0C0, #808080);
+            border: 1px inset #C0C0C0;
+            padding: 3px 10px;
+            font-size: 10px;
+            color: #000000;
+            display: flex;
+            justify-content: space-between;
+            z-index: 1000;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: #000080 !important;
+            border: 2px outset #00FF00 !important;
+        }
+
+        .leaflet-popup-tip {
+            background: #000080 !important;
+            border: 1px solid #00FF00 !important;
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.1;
+        }
+
+        .wind-heatmap-legend {
+            position: fixed;
+            top: 290px;
+            left: 10px;
+            background: linear-gradient(to bottom, #808080, #404040);
+            border: 3px outset #C0C0C0;
+            padding: 10px;
+            z-index: 1000;
+            min-width: 150px;
+            font-size: 10px;
+            box-shadow: 5px 5px 10px #000000;
+            color: #00FF00;
+        }
+
+        .legend-gradient {
+            height: 80px;
+            width: 20px;
+            background: linear-gradient(to top, 
+                rgba(0, 0, 255, 0.3) 0%,
+                rgba(0, 255, 255, 0.5) 25%,
+                rgba(0, 255, 0, 0.6) 50%,
+                rgba(255, 255, 0, 0.7) 75%,
+                rgba(255, 0, 0, 0.8) 100%);
+            border: 1px solid #00FF00;
+            margin: 5px 0;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-bg" id="matrixBg"></div>
+    
+    <div class="header">
+        <div class="title">
+            <span class="blink">●</span> LIVE GLOBAL FLIGHT TRACKER Y2K <span class="blink">●</span>
+        </div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot tailwind"></div>
+                <span>TAILWIND</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot headwind"></div>
+                <span>HEADWIND</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot crosswind"></div>
+                <span>CROSSWIND</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <div class="control-label">DATA SOURCE</div>
+            <button id="aviationStackBtn" class="api-btn active">AVIATIONSTACK</button>
+            <button id="openSkyBtn" class="api-btn">OPENSKY</button>
+            <button id="realtimeBtn" class="api-btn">REALTIME SIM</button>
+        </div>
+        <div class="control-group">
+            <div class="control-label">FLIGHT DATA</div>
+            <button id="toggleFlights" class="toggle-btn active">SHOW FLIGHTS</button>
+        </div>
+        <div class="control-group">
+            <div class="control-label">WIND DISPLAY</div>
+            <button id="toggleWind" class="toggle-btn">WIND ARROWS</button>
+            <button id="toggleHeatmap" class="toggle-btn active">WIND HEATMAP</button>
+        </div>
+        <div class="control-group">
+            <div class="control-label">ECONOMIC VIEW</div>
+            <button id="toggleTimeView" class="toggle-btn active">TIME SAVINGS</button>
+            <button id="toggleFuelView" class="toggle-btn">FUEL SAVINGS</button>
+        </div>
+        <div class="control-group">
+            <div class="control-label">AUTO UPDATE</div>
+            <button id="toggleRefresh" class="toggle-btn active">LIVE MODE</button>
+        </div>
+    </div>
+
+    <div class="wind-heatmap-legend" id="heatmapLegend">
+        <div class="control-label">WIND SPEED (KTS)</div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="legend-gradient"></div>
+            <div style="font-size: 9px;">
+                <div>50+</div>
+                <div style="margin-top: 10px;">40</div>
+                <div style="margin-top: 10px;">30</div>
+                <div style="margin-top: 10px;">20</div>
+                <div style="margin-top: 10px;">10</div>
+                <div style="margin-top: 8px;">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="api-status">
+        <div class="control-label">API STATUS</div>
+        <div class="api-info">
+            <div>SOURCE: <span id="currentSource">AVIATIONSTACK</span></div>
+            <div>STATUS: <span id="apiStatus">CONNECTING...</span></div>
+            <div>FLIGHTS: <span id="flightCount">0</span></div>
+            <div>COVERAGE: <span id="coverage">COMMERCIAL</span></div>
+        </div>
+        <div style="margin-top: 8px; font-size: 9px; color: #FFFF00;">
+            Using your AviationStack API key<br>
+            for live commercial flight data
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stats-item">
+            <span>TOTAL FLIGHTS:</span>
+            <span id="totalFlights">0</span>
+        </div>
+        <div class="stats-item">
+            <span>TAILWIND:</span>
+            <span id="tailwindCount">0</span>
+        </div>
+        <div class="stats-item">
+            <span>HEADWIND:</span>
+            <span id="headwindCount">0</span>
+        </div>
+        <div class="stats-item">
+            <span>CROSSWIND:</span>
+            <span id="crosswindCount">0</span>
+        </div>
+        <div class="stats-item">
+            <span>LAST UPDATE:</span>
+            <span id="lastUpdate">NEVER</span>
+        </div>
+    </div>
+
+    <div class="economic-display">
+        <div class="economic-header" id="economicHeader">GLOBAL TIME SAVINGS ANALYSIS</div>
+        <div id="timeView">
+            <div class="economic-item">
+                <span>HOURS SAVED/HOUR:</span>
+                <span class="economic-value" id="hoursSavedRate">0</span>
+            </div>
+            <div class="economic-item">
+                <span>TOTAL TODAY:</span>
+                <span class="economic-value" id="totalHoursToday">0 hrs</span>
+            </div>
+            <div class="economic-item">
+                <span>THIS MONTH:</span>
+                <span class="economic-value" id="totalHoursMonth">0 hrs</span>
+            </div>
+            <div class="economic-item">
+                <span>AVERAGE/FLIGHT:</span>
+                <span class="economic-value" id="avgTimeSaving">0 min</span>
+            </div>
+            <div class="economic-item">
+                <span>EFFICIENCY GAIN:</span>
+                <span class="economic-value" id="efficiencyGain">0%</span>
+            </div>
+        </div>
+        <div id="fuelView" style="display: none;">
+            <div class="economic-item">
+                <span>FUEL SAVED/HOUR:</span>
+                <span class="economic-value" id="fuelSavedRate">0 gal</span>
+            </div>
+            <div class="economic-item">
+                <span>TOTAL TODAY:</span>
+                <span class="economic-value" id="totalFuelToday">0 gal</span>
+            </div>
+            <div class="economic-item">
+                <span>THIS MONTH:</span>
+                <span class="economic-value" id="totalFuelMonth">0 gal</span>
+            </div>
+            <div class="economic-item">
+                <span>COST SAVED TODAY:</span>
+                <span class="economic-value" id="costSavedToday">$0</span>
+            </div>
+            <div class="economic-item">
+                <span>CO2 REDUCED:</span>
+                <span class="economic-value" id="co2Reduced">0 tons</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div>CONNECTING TO AVIATIONSTACK API...</div>
+        <div style="font-size: 10px; margin-top: 5px;">LOADING LIVE COMMERCIAL FLIGHT DATA...</div>
+    </div>
+
+    <div class="error" id="error"></div>
+
+    <div class="status-bar">
+        <span>FLIGHT RADAR SYSTEM v3.0 | STATUS: <span id="systemStatus">ACTIVE</span></span>
+        <span id="dataInfo">LIVE COMMERCIAL DATA - AVIATIONSTACK API</span>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js"></script>
+    <script>
+        class EnhancedFlightTracker {
+            constructor() {
+                this.map = null;
+                this.flightLayer = L.layerGroup();
+                this.windLayer = L.layerGroup();
+                this.heatmapLayer = null;
+                this.flights = new Map();
+                this.windData = new Map();
+                this.showFlights = true;
+                this.showWind = false;
+                this.showHeatmap = true;
+                this.showTimeView = true;
+                this.autoRefresh = true;
+                this.refreshInterval = null;
+                this.economicInterval = null;
+                this.lastBounds = null;
+                this.zoomLevel = 3;
+                this.currentDataSource = 'aviationstack';
+                
+                // Economic tracking
+                this.economicData = {
+                    hoursPerHour: 0,
+                    totalHoursToday: 0,
+                    totalHoursMonth: 0,
+                    fuelPerHour: 0,
+                    totalFuelToday: 0,
+                    totalFuelMonth: 0,
+                    startTime: Date.now()
+                };
+                
+                // Your actual API key from the AviationStack dashboard
+                this.aviationStackKey = '7a2148661bcb35dcab053f4854fa3501';
+                
+                this.init();
+                this.createMatrixEffect();
+            }
+
+            async init() {
+                this.initMap();
+                this.setupControls();
+                await this.loadLiveData();
+                this.startAutoRefresh();
+                this.startEconomicTracking();
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('systemStatus').textContent = 'ONLINE';
+            }
+
+            initMap() {
+                this.map = L.map('map', {
+                    center: [30, 0],
+                    zoom: 3,
+                    zoomControl: true,
+                    worldCopyJump: true,
+                    maxZoom: 12
+                });
+
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+                    attribution: '© GLOBAL SATELLITE NETWORK Y2K',
+                    maxZoom: 18
+                }).addTo(this.map);
+
+                this.flightLayer.addTo(this.map);
+                this.initHeatmap();
+
+                this.map.on('moveend zoomend', () => {
+                    this.zoomLevel = this.map.getZoom();
+                    this.lastBounds = this.map.getBounds();
+                    if (this.autoRefresh) {
+                        this.loadLiveData();
+                    }
+                    this.updateHeatmapVisibility();
+                });
+            }
+
+            initHeatmap() {
+                // Create canvas overlay for wind heatmap
+                const canvas = L.DomUtil.create('canvas');
+                const bounds = [[-90, -180], [90, 180]];
+                this.heatmapLayer = L.imageOverlay(canvas.toDataURL(), bounds, {
+                    opacity: 0.4,
+                    interactive: false
+                });
+                
+                if (this.showHeatmap) {
+                    this.heatmapLayer.addTo(this.map);
+                }
+            }
+
+            setupControls() {
+                // API source selection
+                document.getElementById('aviationStackBtn').addEventListener('click', () => {
+                    this.switchDataSource('aviationstack');
+                });
+                
+                document.getElementById('openSkyBtn').addEventListener('click', () => {
+                    this.switchDataSource('opensky');
+                });
+                
+                document.getElementById('realtimeBtn').addEventListener('click', () => {
+                    this.switchDataSource('realtime');
+                });
+
+                // Display toggles
+                document.getElementById('toggleFlights').addEventListener('click', () => {
+                    this.showFlights = !this.showFlights;
+                    this.toggleLayer(this.flightLayer, this.showFlights, 'toggleFlights');
+                });
+
+                document.getElementById('toggleWind').addEventListener('click', () => {
+                    this.showWind = !this.showWind;
+                    this.toggleLayer(this.windLayer, this.showWind, 'toggleWind');
+                });
+
+                document.getElementById('toggleHeatmap').addEventListener('click', () => {
+                    this.showHeatmap = !this.showHeatmap;
+                    this.toggleHeatmap();
+                });
+
+                // Economic view toggles
+                document.getElementById('toggleTimeView').addEventListener('click', () => {
+                    this.showTimeView = true;
+                    this.updateEconomicDisplay();
+                });
+
+                document.getElementById('toggleFuelView').addEventListener('click', () => {
+                    this.showTimeView = false;
+                    this.updateEconomicDisplay();
+                });
+
+                document.getElementById('toggleRefresh').addEventListener('click', () => {
+                    this.autoRefresh = !this.autoRefresh;
+                    const btn = document.getElementById('toggleRefresh');
+                    btn.classList.toggle('active');
+                    btn.textContent = this.autoRefresh ? 'LIVE MODE' : 'MANUAL';
+                    
+                    if (this.autoRefresh) {
+                        this.startAutoRefresh();
+                    } else {
+                        this.stopAutoRefresh();
+                    }
+                });
+            }
+
+            switchDataSource(source) {
+                document.querySelectorAll('.api-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(source + 'Btn').classList.add('active');
+                
+                this.currentDataSource = source;
+                const sourceNames = {
+                    'aviationstack': 'AVIATIONSTACK',
+                    'opensky': 'OPENSKY',
+                    'realtime': 'REALTIME SIM'
+                };
+                document.getElementById('currentSource').textContent = sourceNames[source];
+                
+                this.loadLiveData();
+            }
+
+            toggleLayer(layer, show, buttonId) {
+                const btn = document.getElementById(buttonId);
+                if (show) {
+                    layer.addTo(this.map);
+                    btn.classList.add('active');
+                } else {
+                    this.map.removeLayer(layer);
+                    btn.classList.remove('active');
+                }
+            }
+
+            toggleHeatmap() {
+                const btn = document.getElementById('toggleHeatmap');
+                if (this.showHeatmap) {
+                    this.heatmapLayer.addTo(this.map);
+                    btn.classList.add('active');
+                    document.getElementById('heatmapLegend').style.display = 'block';
+                } else {
+                    this.map.removeLayer(this.heatmapLayer);
+                    btn.classList.remove('active');
+                    document.getElementById('heatmapLegend').style.display = 'none';
+                }
+            }
+
+            updateHeatmapVisibility() {
+                const legend = document.getElementById('heatmapLegend');
+                if (this.showHeatmap) {
+                    legend.style.display = 'block';
+                } else {
+                    legend.style.display = 'none';
+                }
+            }
+
+            async loadLiveData() {
+                try {
+                    document.getElementById('apiStatus').textContent = 'FETCHING...';
+                    
+                    await Promise.all([
+                        this.loadFlightData(),
+                        this.loadWindData()
+                    ]);
+                    
+                    this.updateStats();
+                    this.updateWindHeatmap();
+                    document.getElementById('apiStatus').textContent = 'ONLINE';
+                    
+                } catch (error) {
+                    this.showError('API ERROR: ' + error.message);
+                    document.getElementById('apiStatus').textContent = 'LIMITED';
+                }
+            }
+
+            async loadFlightData() {
+                switch (this.currentDataSource) {
+                    case 'aviationstack':
+                        await this.loadAviationStackData();
+                        break;
+                    case 'opensky':
+                        await this.loadOpenSkyData();
+                        break;
+                    case 'realtime':
+                        await this.loadRealtimeSimulation();
+                        break;
+                }
+            }
+
+            async loadAviationStackData() {
+                try {
+                    const params = new URLSearchParams({
+                        access_key: this.aviationStackKey,
+                        limit: '100',
+                        offset: '0'
+                    });
+
+                    const response = await fetch(`https://api.aviationstack.com/v1/flights?${params}`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error.message);
+                    }
+
+                    this.processAviationStackData(data);
+                    document.getElementById('coverage').textContent = 'COMMERCIAL';
+                    document.getElementById('dataInfo').textContent = 'LIVE COMMERCIAL FLIGHT DATA - AVIATIONSTACK API';
+                    
+                } catch (error) {
+                    console.error('AviationStack error:', error);
+                    this.showError('AVIATIONSTACK API ERROR - USING SIMULATION');
+                    await this.loadRealtimeSimulation();
+                }
+            }
+
+            processAviationStackData(data) {
+                this.flightLayer.clearLayers();
+                this.flights.clear();
+
+                const flights = data.data || [];
+                let processed = 0;
+
+                flights.forEach((flight, index) => {
+                    if (!flight.live || !flight.live.latitude || !flight.live.longitude) {
+                        return;
+                    }
+
+                    const flightData = {
+                        icao24: flight.flight.icao || `ASK${index}`,
+                        callsign: flight.flight.iata || flight.flight.icao || `FLIGHT${index}`,
+                        country: flight.airline?.country || 'International',
+                        lat: flight.live.latitude,
+                        lon: flight.live.longitude,
+                        altitude: Math.round(flight.live.altitude || 35000),
+                        velocity: Math.round(flight.live.speed_horizontal || 450),
+                        heading: Math.round(flight.live.direction || 0),
+                        verticalRate: flight.live.speed_vertical || 0,
+                        airline: flight.airline?.name || 'Unknown',
+                        aircraft: flight.aircraft?.type || 'Unknown',
+                        departure: flight.departure?.airport || 'Unknown',
+                        arrival: flight.arrival?.airport || 'Unknown',
+                        lastUpdate: Date.now(),
+                        source: 'AviationStack'
+                    };
+
+                    this.flights.set(flightData.icao24, flightData);
+                    this.createFlightMarker(flightData);
+                    processed++;
+                });
+
+                console.log(`Processed ${processed} AviationStack flights`);
+                document.getElementById('flightCount').textContent = processed;
+            }
+
+            async loadOpenSkyData() {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 15000);
+                    
+                    const response = await fetch('https://opensky-network.org/api/states/all', {
+                        signal: controller.signal,
+                        mode: 'cors'
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.processOpenSkyData(data);
+                        document.getElementById('coverage').textContent = 'GLOBAL ADS-B';
+                        document.getElementById('dataInfo').textContent = 'LIVE ADS-B DATA - OPENSKY NETWORK';
+                        return;
+                    }
+                } catch (e) {
+                    console.log('OpenSky direct fetch failed, using simulation');
+                }
+
+                await this.loadRealtimeSimulation();
+            }
+
+            processOpenSkyData(data) {
+                this.flightLayer.clearLayers();
+                this.flights.clear();
+
+                if (!data.states || data.states.length === 0) {
+                    this.loadRealtimeSimulation();
+                    return;
+                }
+
+                let processed = 0;
+
+                data.states.forEach((state, index) => {
+                    const [icao24, callsign, origin_country, time_position, last_contact, 
+                           longitude, latitude, baro_altitude, on_ground, velocity, 
+                           true_track, vertical_rate] = state;
+
+                    if (latitude && longitude && !on_ground && velocity && true_track !== null) {
+                        const flight = {
+                            icao24,
+                            callsign: (callsign || `OSN${index}`).trim(),
+                            country: origin_country || 'Unknown',
+                            lat: latitude,
+                            lon: longitude,
+                            altitude: Math.round((baro_altitude || 0) * 3.28084),
+                            velocity: Math.round((velocity || 0) * 1.94384),
+                            heading: Math.round(true_track),
+                            verticalRate: vertical_rate || 0,
+                            lastUpdate: Date.now(),
+                            source: 'OpenSky'
+                        };
+
+                        this.flights.set(icao24, flight);
+                        this.createFlightMarker(flight);
+                        processed++;
+                    }
+                });
+
+                console.log(`Processed ${processed} OpenSky flights`);
+                document.getElementById('flightCount').textContent = processed;
+            }
+
+            async loadRealtimeSimulation() {
+                this.flightLayer.clearLayers();
+                this.flights.clear();
+
+                const globalRoutes = this.getGlobalFlightRoutes();
+                let totalFlights = 0;
+
+                globalRoutes.forEach(route => {
+                    const flightsOnRoute = Math.floor(Math.random() * 5) + 2;
+                    
+                    for (let i = 0; i < flightsOnRoute; i++) {
+                        const progress = Math.random();
+                        const lat = route.from[0] + (route.to[0] - route.from[0]) * progress;
+                        const lon = route.from[1] + (route.to[1] - route.from[1]) * progress;
+                        
+                        const heading = this.calculateBearing(route.from[0], route.from[1], route.to[0], route.to[1]);
+                        
+                        const flight = {
+                            icao24: `SIM${totalFlights}`,
+                            callsign: `${route.airline}${Math.floor(Math.random() * 999)}`,
+                            country: route.country,
+                            lat: lat,
+                            lon: lon,
+                            altitude: Math.round(28000 + Math.random() * 15000),
+                            velocity: Math.round(400 + Math.random() * 150),
+                            heading: heading + (Math.random() - 0.5) * 30,
+                            verticalRate: (Math.random() - 0.5) * 2000,
+                            aircraft: route.aircraft,
+                            departure: route.fromCode,
+                            arrival: route.toCode,
+                            lastUpdate: Date.now(),
+                            source: 'Realtime Simulation'
+                        };
+
+                        this.flights.set(flight.icao24, flight);
+                        this.createFlightMarker(flight);
+                        totalFlights++;
+                        
+                        if (totalFlights >= 150) return;
+                    }
+                });
+
+                document.getElementById('flightCount').textContent = totalFlights;
+                document.getElementById('coverage').textContent = 'GLOBAL SIM';
+            }
+
+            getGlobalFlightRoutes() {
+                return [
+                    {from: [40.64, -73.78], to: [51.47, -0.46], fromCode: 'JFK', toCode: 'LHR', airline: 'UAL', country: 'USA', aircraft: 'B77W'},
+                    {from: [35.68, 139.69], to: [37.46, 126.44], fromCode: 'NRT', toCode: 'ICN', airline: 'JAL', country: 'Japan', aircraft: 'B789'},
+                    {from: [25.25, 55.36], to: [1.35, 103.82], fromCode: 'DXB', toCode: 'SIN', airline: 'EK', country: 'UAE', aircraft: 'A388'},
+                    {from: [33.94, -118.41], to: [22.31, 114.17], fromCode: 'LAX', toCode: 'HKG', airline: 'CX', country: 'USA', aircraft: 'B77W'},
+                    {from: [52.31, 4.77], to: [40.64, -73.78], fromCode: 'AMS', toCode: 'JFK', airline: 'KLM', country: 'Netherlands', aircraft: 'B789'},
+                    {from: [48.86, 2.35], to: [25.25, 55.36], fromCode: 'CDG', toCode: 'DXB', airline: 'AFR', country: 'France', aircraft: 'A359'}
+                ];
+            }
+
+            async loadWindData() {
+                // Generate comprehensive wind data based on current flights
+                this.windData.clear();
+                this.windLayer.clearLayers();
+
+                // Create wind grid based on zoom level
+                const gridSize = this.zoomLevel > 6 ? 5 : 15;
+                const bounds = this.lastBounds || this.map.getBounds();
+
+                for (let lat = bounds.getSouth(); lat <= bounds.getNorth(); lat += gridSize) {
+                    for (let lon = bounds.getWest(); lon <= bounds.getEast(); lon += gridSize) {
+                        const windData = this.generateRealisticWind(lat, lon);
+                        this.windData.set(`${lat.toFixed(1)}_${lon.toFixed(1)}`, windData);
+                        
+                        if (this.showWind) {
+                            this.createWindArrow(windData);
+                        }
+                    }
+                }
+            }
+
+            generateRealisticWind(lat, lon) {
+                const now = Date.now();
+                const timeVariation = Math.sin(now / 3600000) * 20; // Hourly variation
+                const seasonalVariation = Math.sin((new Date().getMonth() / 12) * Math.PI * 2) * 15;
+                
+                // Base wind patterns based on latitude
+                let baseDirection, baseSpeed;
+                
+                if (Math.abs(lat) < 30) { // Trade winds
+                    baseDirection = lat > 0 ? 225 : 135;
+                    baseSpeed = 15 + Math.random() * 10;
+                } else if (Math.abs(lat) > 60) { // Polar easterlies
+                    baseDirection = 90;
+                    baseSpeed = 12 + Math.random() * 8;
+                } else { // Westerlies
+                    baseDirection = 270;
+                    baseSpeed = 20 + Math.random() * 15;
+                }
+
+                // Add variations
+                baseDirection += timeVariation + seasonalVariation + (Math.random() - 0.5) * 40;
+                baseSpeed += (Math.random() - 0.5) * 10;
+
+                return {
+                    lat,
+                    lon,
+                    direction: Math.round((baseDirection + 360) % 360),
+                    speed: Math.max(5, Math.round(baseSpeed)),
+                    lastUpdate: now
+                };
+            }
+
+            updateWindHeatmap() {
+                if (!this.showHeatmap) return;
+
+                // Create canvas for heatmap
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 512;
+                canvas.height = 256;
+
+                // Create image data
+                const imageData = ctx.createImageData(512, 256);
+                const data = imageData.data;
+
+                // Fill heatmap based on wind data
+                for (let y = 0; y < 256; y++) {
+                    for (let x = 0; x < 512; x++) {
+                        const lat = 90 - (y / 256) * 180;
+                        const lon = (x / 512) * 360 - 180;
+                        
+                        const windData = this.getInterpolatedWind(lat, lon);
+                        const intensity = Math.min(windData.speed / 50, 1);
+                        
+                        const index = (y * 512 + x) * 4;
+                        
+                        // Color based on wind speed
+                        if (intensity < 0.2) {
+                            data[index] = 0; data[index + 1] = 0; data[index + 2] = 255; // Blue
+                        } else if (intensity < 0.4) {
+                            data[index] = 0; data[index + 1] = 255; data[index + 2] = 255; // Cyan
+                        } else if (intensity < 0.6) {
+                            data[index] = 0; data[index + 1] = 255; data[index + 2] = 0; // Green
+                        } else if (intensity < 0.8) {
+                            data[index] = 255; data[index + 1] = 255; data[index + 2] = 0; // Yellow
+                        } else {
+                            data[index] = 255; data[index + 1] = 0; data[index + 2] = 0; // Red
+                        }
+                        
+                        data[index + 3] = Math.round(intensity * 180); // Alpha
+                    }
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+                
+                // Update heatmap layer
+                const bounds = [[-90, -180], [90, 180]];
+                this.map.removeLayer(this.heatmapLayer);
+                this.heatmapLayer = L.imageOverlay(canvas.toDataURL(), bounds, {
+                    opacity: 0.4,
+                    interactive: false
+                });
+                
+                if (this.showHeatmap) {
+                    this.heatmapLayer.addTo(this.map);
+                }
+            }
+
+            getInterpolatedWind(lat, lon) {
+                // Find nearest wind data points and interpolate
+                let nearestWind = null;
+                let minDistance = Infinity;
+
+                for (const [key, wind] of this.windData) {
+                    const distance = Math.sqrt(
+                        Math.pow(lat - wind.lat, 2) + Math.pow(lon - wind.lon, 2)
+                    );
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestWind = wind;
+                    }
+                }
+
+                return nearestWind || this.generateRealisticWind(lat, lon);
+            }
+
+            calculateBearing(lat1, lon1, lat2, lon2) {
+                const φ1 = lat1 * Math.PI/180;
+                const φ2 = lat2 * Math.PI/180;
+                const Δλ = (lon2-lon1) * Math.PI/180;
+                
+                const x = Math.sin(Δλ) * Math.cos(φ2);
+                const y = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+                
+                const θ = Math.atan2(x, y);
+                
+                return (θ * 180/Math.PI + 360) % 360;
+            }
+
+            calculateWindEffect(flightHeading, windDirection, windSpeed) {
+                const relativeAngle = Math.abs(flightHeading - windDirection);
+                const normalizedAngle = relativeAngle > 180 ? 360 - relativeAngle : relativeAngle;
+                
+                const headwindComponent = windSpeed * Math.cos(normalizedAngle * Math.PI / 180);
+                
+                let type;
+                if (normalizedAngle <= 45) {
+                    type = headwindComponent > 0 ? 'tailwind' : 'headwind';
+                } else if (normalizedAngle >= 135) {
+                    type = headwindComponent > 0 ? 'headwind' : 'tailwind';
+                } else {
+                    type = 'crosswind';
+                }
+
+                return {
+                    type,
+                    component: Math.abs(headwindComponent),
+                    timeSaving: this.calculateTimeSaving(type, Math.abs(headwindComponent)),
+                    fuelSaving: this.calculateFuelSaving(type, Math.abs(headwindComponent))
+                };
+            }
+
+            calculateTimeSaving(type, windComponent) {
+                if (type === 'tailwind') {
+                    // Tailwind increases ground speed, reducing flight time
+                    return windComponent / 500 * 60; // minutes saved per flight
+                } else if (type === 'headwind') {
+                    // Headwind decreases ground speed, increasing flight time
+                    return -(windComponent / 500 * 60); // minutes lost per flight
+                }
+                return 0; // Crosswind has minimal time impact
+            }
+
+            calculateFuelSaving(type, windComponent) {
+                if (type === 'tailwind') {
+                    // Tailwind reduces fuel consumption
+                    return windComponent / 10; // gallons saved per flight
+                } else if (type === 'headwind') {
+                    // Headwind increases fuel consumption
+                    return -(windComponent / 10); // gallons extra per flight
+                }
+                return windComponent / 20; // Crosswind slightly increases fuel usage
+            }
+
+            createFlightMarker(flight) {
+                const nearestWind = this.getInterpolatedWind(flight.lat, flight.lon);
+                const windEffect = this.calculateWindEffect(flight.heading, nearestWind.direction, nearestWind.speed);
+                
+                // Update economic tracking
+                this.updateEconomicTracking(windEffect);
+                
+                let color;
+                switch (windEffect.type) {
+                    case 'tailwind': color = '#00FF00'; break;
+                    case 'headwind': color = '#FF0000'; break;
+                    default: color = '#FFFF00'; break;
+                }
+
+                const altitudeSize = Math.min(20, Math.max(12, flight.altitude / 2000));
+                
+                const aircraftIcon = L.divIcon({
+                    className: 'aircraft-icon',
+                    html: `<div style="color: ${color}; font-size: ${altitudeSize}px; transform: rotate(${flight.heading}deg); text-shadow: 1px 1px 2px #000;">✈</div>`,
+                    iconSize: [altitudeSize + 4, altitudeSize + 4],
+                    iconAnchor: [(altitudeSize + 4)/2, (altitudeSize + 4)/2]
+                });
+
+                const marker = L.marker([flight.lat, flight.lon], { icon: aircraftIcon });
+
+                const timeSavingText = windEffect.timeSaving > 0 ? 
+                    `SAVING ${windEffect.timeSaving.toFixed(1)} MIN` : 
+                    `LOSING ${Math.abs(windEffect.timeSaving).toFixed(1)} MIN`;
+
+                const fuelSavingText = windEffect.fuelSaving > 0 ? 
+                    `SAVING ${windEffect.fuelSaving.toFixed(1)} GAL` : 
+                    `USING ${Math.abs(windEffect.fuelSaving).toFixed(1)} GAL EXTRA`;
+
+                const popupContent = `
+                    <div class="flight-popup">
+                        <div class="popup-header">${flight.callsign}</div>
+                        <div class="popup-row">AIRLINE: ${flight.airline || 'Unknown'}</div>
+                        <div class="popup-row">ROUTE: ${flight.departure} → ${flight.arrival}</div>
+                        <div class="popup-row">AIRCRAFT: ${flight.aircraft || 'Unknown'}</div>
+                        <div class="popup-row">ALTITUDE: ${flight.altitude.toLocaleString()} FT</div>
+                        <div class="popup-row">SPEED: ${flight.velocity} KTS</div>
+                        <div class="popup-row">HEADING: ${flight.heading}°</div>
+                        <div class="popup-row">WIND EFFECT: <span style="color: ${color};">${windEffect.type.toUpperCase()}</span></div>
+                        <div class="popup-row">WIND: ${nearestWind.speed} KTS @ ${nearestWind.direction}°</div>
+                        <div class="popup-row">COMPONENT: ${Math.round(windEffect.component)} KTS</div>
+                        <div class="popup-row">TIME: ${timeSavingText}</div>
+                        <div class="popup-row">FUEL: ${fuelSavingText}</div>
+                        <div class="popup-row">SOURCE: ${flight.source}</div>
+                    </div>
+                `;
+
+                marker.bindPopup(popupContent);
+                this.flightLayer.addLayer(marker);
+            }
+
+            createWindArrow(wind) {
+                const windSize = Math.min(16, Math.max(8, wind.speed / 3 + 8));
+                const opacity = Math.min(1, wind.speed / 30 + 0.3);
+                
+                const windIcon = L.divIcon({
+                    className: 'wind-arrow-icon',
+                    html: `<div style="color: rgba(0, 255, 255, ${opacity}); font-size: ${windSize}px; transform: rotate(${wind.direction}deg); text-shadow: 1px 1px 2px #000;">➤</div>`,
+                    iconSize: [windSize + 2, windSize + 2],
+                    iconAnchor: [(windSize + 2)/2, (windSize + 2)/2]
+                });
+
+                const marker = L.marker([wind.lat, wind.lon], { icon: windIcon });
+                
+                marker.bindPopup(`
+                    <div class="flight-popup">
+                        <div class="popup-header">WIND DATA</div>
+                        <div class="popup-row">DIRECTION: ${wind.direction}°</div>
+                        <div class="popup-row">SPEED: ${wind.speed} KTS</div>
+                        <div class="popup-row">COORDINATES: ${wind.lat.toFixed(2)}°, ${wind.lon.toFixed(2)}°</div>
+                    </div>
+                `);
+
+                this.windLayer.addLayer(marker);
+            }
+
+            updateEconomicTracking(windEffect) {
+                const hoursPerFlight = 3.5; // Average flight duration
+                const timeSavingHours = windEffect.timeSaving / 60;
+                const fuelSaving = windEffect.fuelSaving;
+
+                this.economicData.hoursPerHour += timeSavingHours * (60 / hoursPerFlight); // Scale by flights per hour
+                this.economicData.fuelPerHour += fuelSaving * (60 / hoursPerFlight);
+            }
+
+            startEconomicTracking() {
+                this.economicInterval = setInterval(() => {
+                    this.updateEconomicCounters();
+                    this.updateEconomicDisplay();
+                }, 1000);
+            }
+
+            updateEconomicCounters() {
+                const now = Date.now();
+                const hoursElapsed = (now - this.economicData.startTime) / 3600000;
+                
+                // Accumulate daily and monthly totals
+                this.economicData.totalHoursToday += this.economicData.hoursPerHour / 3600;
+                this.economicData.totalHoursMonth += this.economicData.hoursPerHour / 3600;
+                this.economicData.totalFuelToday += this.economicData.fuelPerHour / 3600;
+                this.economicData.totalFuelMonth += this.economicData.fuelPerHour / 3600;
+            }
+
+            updateEconomicDisplay() {
+                const timeBtn = document.getElementById('toggleTimeView');
+                const fuelBtn = document.getElementById('toggleFuelView');
+                const timeView = document.getElementById('timeView');
+                const fuelView = document.getElementById('fuelView');
+                const header = document.getElementById('economicHeader');
+
+                if (this.showTimeView) {
+                    timeBtn.classList.add('active');
+                    fuelBtn.classList.remove('active');
+                    timeView.style.display = 'block';
+                    fuelView.style.display = 'none';
+                    header.textContent = 'GLOBAL TIME SAVINGS ANALYSIS';
+
+                    document.getElementById('hoursSavedRate').textContent = this.economicData.hoursPerHour.toFixed(1);
+                    document.getElementById('totalHoursToday').textContent = `${Math.round(this.economicData.totalHoursToday)} hrs`;
+                    document.getElementById('totalHoursMonth').textContent = `${Math.round(this.economicData.totalHoursMonth)} hrs`;
+                    
+                    const avgMinutes = (this.economicData.hoursPerHour * 60) / Math.max(1, this.flights.size);
+                    document.getElementById('avgTimeSaving').textContent = `${avgMinutes.toFixed(1)} min`;
+                    
+                    const efficiency = Math.max(0, (this.economicData.hoursPerHour / Math.max(1, this.flights.size)) * 100);
+                    document.getElementById('efficiencyGain').textContent = `${efficiency.toFixed(1)}%`;
+                } else {
+                    timeBtn.classList.remove('active');
+                    fuelBtn.classList.add('active');
+                    timeView.style.display = 'none';
+                    fuelView.style.display = 'block';
+                    header.textContent = 'GLOBAL FUEL SAVINGS ANALYSIS';
+
+                    document.getElementById('fuelSavedRate').textContent = `${Math.round(this.economicData.fuelPerHour)} gal`;
+                    document.getElementById('totalFuelToday').textContent = `${Math.round(this.economicData.totalFuelToday).toLocaleString()} gal`;
+                    document.getElementById('totalFuelMonth').textContent = `${Math.round(this.economicData.totalFuelMonth).toLocaleString()} gal`;
+                    
+                    const costSaved = this.economicData.totalFuelToday * 3.50; // $3.50 per gallon
+                    document.getElementById('costSavedToday').textContent = `${Math.round(costSaved).toLocaleString()}`;
+                    
+                    const co2Reduced = this.economicData.totalFuelToday * 0.021; // 21 lbs CO2 per gallon
+                    document.getElementById('co2Reduced').textContent = `${(co2Reduced / 2000).toFixed(1)} tons`;
+                }
+            }
+
+            updateStats() {
+                const totalFlights = this.flights.size;
+                let tailwindCount = 0;
+                let headwindCount = 0;
+                let crosswindCount = 0;
+
+                this.flights.forEach(flight => {
+                    const nearestWind = this.getInterpolatedWind(flight.lat, flight.lon);
+                    const windEffect = this.calculateWindEffect(flight.heading, nearestWind.direction, nearestWind.speed);
+                    
+                    switch (windEffect.type) {
+                        case 'tailwind': tailwindCount++; break;
+                        case 'headwind': headwindCount++; break;
+                        case 'crosswind': crosswindCount++; break;
+                    }
+                });
+
+                document.getElementById('totalFlights').textContent = totalFlights.toLocaleString();
+                document.getElementById('tailwindCount').textContent = tailwindCount;
+                document.getElementById('headwindCount').textContent = headwindCount;
+                document.getElementById('crosswindCount').textContent = crosswindCount;
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+            }
+
+            startAutoRefresh() {
+                this.stopAutoRefresh();
+                const refreshRate = this.currentDataSource === 'aviationstack' ? 60000 : 30000; // 1 min for real API
+                this.refreshInterval = setInterval(() => {
+                    if (this.autoRefresh) {
+                        this.loadLiveData();
+                    }
+                }, refreshRate);
+            }
+
+            stopAutoRefresh() {
+                if (this.refreshInterval) {
+                    clearInterval(this.refreshInterval);
+                    this.refreshInterval = null;
+                }
+            }
+
+            showError(message) {
+                const errorDiv = document.getElementById('error');
+                errorDiv.innerHTML = message;
+                errorDiv.style.display = 'block';
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 10000);
+            }
+
+            createMatrixEffect() {
+                const chars = "0123456789ABCDEF█▓▒░";
+                const matrixDiv = document.getElementById('matrixBg');
+                
+                setInterval(() => {
+                    if (Math.random() < 0.08) {
+                        const char = document.createElement('div');
+                        char.textContent = chars[Math.floor(Math.random() * chars.length)];
+                        char.style.position = 'absolute';
+                        char.style.left = Math.random() * window.innerWidth + 'px';
+                        char.style.top = '0px';
+                        char.style.color = Math.random() < 0.7 ? '#00FF00' : '#0080FF';
+                        char.style.fontSize = (8 + Math.random() * 6) + 'px';
+                        char.style.fontFamily = 'Courier New';
+                        char.style.zIndex = '0';
+                        char.style.animation = 'fall 4s linear forwards';
+                        char.style.opacity = Math.random() * 0.8 + 0.2;
+                        
+                        matrixDiv.appendChild(char);
+                        
+                        setTimeout(() => {
+                            if (char.parentNode) {
+                                char.parentNode.removeChild(char);
+                            }
+                        }, 4000);
+                    }
+                }, 120);
+            }
+        }
+
+        // Initialize the enhanced flight tracker
+        window.addEventListener('load', () => {
+            new EnhancedFlightTracker();
+        });
+    </script>
+</body>
+</html>
