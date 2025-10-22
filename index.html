@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIVE GLOBAL FLIGHT TRACKER 2000</title>
+    <title>Planes and their winds: Time and Fuel saved</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Courier+New:wght@400;700&display=swap');
@@ -36,7 +36,7 @@
             right: 0;
             background: linear-gradient(to right, #000080, #4B0082);
             border: 3px outset #00FF00;
-            padding: 8px 15px;
+            padding: 12px 20px;
             z-index: 1000;
             display: flex;
             justify-content: space-between;
@@ -45,7 +45,7 @@
         }
 
         .title {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 700;
             color: #FFFF00;
             text-shadow: 2px 2px 4px #000000;
@@ -53,7 +53,7 @@
             align-items: center;
             gap: 10px;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
         }
 
         .blink {
@@ -69,23 +69,29 @@
             display: flex;
             gap: 15px;
             align-items: center;
-            font-size: 11px;
+            font-size: 12px;
             text-transform: uppercase;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 12px;
+            border: 2px solid #00FF00;
+            border-radius: 4px;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 5px;
-            border: 1px solid #00FF00;
-            padding: 3px 6px;
-            background: rgba(0, 0, 0, 0.7);
+            gap: 8px;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.5);
+            border-radius: 2px;
         }
 
         .legend-dot {
-            width: 8px;
-            height: 8px;
-            border: 1px solid white;
+            width: 10px;
+            height: 10px;
+            border: 2px solid white;
+            box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
         }
 
         .tailwind { background: #00FF00; }
@@ -94,155 +100,183 @@
 
         #map {
             position: absolute;
-            top: 50px;
+            top: 60px;
             left: 0;
             right: 0;
-            bottom: 0;
+            bottom: 30px;
             z-index: 1;
-            border: 2px inset #00FF00;
+            border: 3px solid #00FF00;
         }
 
         .leaflet-container {
-            background: #000040 !important;
+            background: #001a33 !important;
         }
 
         .controls {
             position: fixed;
-            top: 70px;
-            left: 10px;
-            background: linear-gradient(to bottom, #808080, #404040);
-            border: 3px outset #C0C0C0;
-            padding: 10px;
+            top: 80px;
+            left: 15px;
+            background: rgba(25, 25, 25, 0.95);
+            border: 3px solid #00FF00;
+            padding: 15px;
             z-index: 1000;
-            min-width: 200px;
-            font-size: 11px;
-            box-shadow: 5px 5px 10px #000000;
+            min-width: 220px;
+            font-size: 12px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            border-radius: 4px;
         }
 
         .control-group {
-            margin-bottom: 8px;
-            border: 1px inset #C0C0C0;
-            padding: 5px;
-            background: #E0E0E0;
-            color: #000000;
+            margin-bottom: 12px;
+            border: 2px solid #00FF00;
+            padding: 8px;
+            background: rgba(0, 0, 128, 0.7);
+            color: #00FF00;
+            border-radius: 3px;
         }
 
         .control-label {
             font-weight: bold;
-            margin-bottom: 3px;
+            margin-bottom: 6px;
             text-transform: uppercase;
-            font-size: 10px;
+            font-size: 11px;
+            color: #FFFF00;
+            letter-spacing: 1px;
         }
 
         .toggle-btn, .api-btn {
-            background: linear-gradient(to bottom, #C0C0C0, #808080);
-            color: #000000;
-            border: 2px outset #C0C0C0;
-            padding: 4px 8px;
+            background: linear-gradient(to bottom, #004d00, #003300);
+            color: #00FF00;
+            border: 2px solid #00FF00;
+            padding: 6px 10px;
             cursor: pointer;
             font-family: 'Courier New', monospace;
-            font-size: 10px;
+            font-size: 11px;
             width: 100%;
             text-transform: uppercase;
             font-weight: bold;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
+            border-radius: 2px;
+            transition: all 0.2s;
         }
 
         .toggle-btn:hover, .api-btn:hover {
-            background: linear-gradient(to bottom, #E0E0E0, #A0A0A0);
-        }
-
-        .toggle-btn:active, .api-btn:active {
-            border: 2px inset #C0C0C0;
+            background: linear-gradient(to bottom, #006600, #004d00);
+            box-shadow: 0 0 8px #00FF00;
         }
 
         .toggle-btn.active, .api-btn.active {
-            background: linear-gradient(to bottom, #00FF00, #008000);
+            background: linear-gradient(to bottom, #00FF00, #00CC00);
             color: #000000;
-            box-shadow: 0 0 5px #00FF00;
+            box-shadow: 0 0 12px #00FF00;
+            border-color: #FFFF00;
         }
 
         .stats {
             position: fixed;
-            bottom: 10px;
-            left: 10px;
-            background: linear-gradient(to bottom, #808080, #404040);
-            border: 3px outset #C0C0C0;
-            padding: 10px;
+            bottom: 50px;
+            left: 15px;
+            background: rgba(25, 25, 25, 0.95);
+            border: 3px solid #00FF00;
+            padding: 15px;
             z-index: 1000;
-            font-size: 11px;
-            min-width: 200px;
-            box-shadow: 5px 5px 10px #000000;
+            font-size: 12px;
+            min-width: 220px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            border-radius: 4px;
         }
 
         .stats-item {
             display: flex;
             justify-content: space-between;
-            margin: 3px 0;
-            padding: 2px;
-            background: #000080;
-            border: 1px inset #C0C0C0;
+            margin: 6px 0;
+            padding: 6px 8px;
+            background: rgba(0, 0, 128, 0.8);
+            border: 2px solid rgba(0, 255, 0, 0.5);
             color: #00FF00;
+            border-radius: 2px;
+        }
+
+        .stats-item span:last-child {
+            color: #FFFF00;
+            font-weight: bold;
         }
 
         .api-status {
             position: fixed;
-            top: 70px;
-            right: 10px;
-            background: linear-gradient(to bottom, #808080, #404040);
-            border: 3px outset #C0C0C0;
-            padding: 10px;
+            top: 80px;
+            right: 15px;
+            background: rgba(25, 25, 25, 0.95);
+            border: 3px solid #00FF00;
+            padding: 15px;
             z-index: 1000;
-            min-width: 180px;
-            font-size: 11px;
-            box-shadow: 5px 5px 10px #000000;
+            min-width: 200px;
+            font-size: 12px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            border-radius: 4px;
         }
 
         .api-info {
             color: #00FF00;
-            background: #000080;
-            border: 1px inset #C0C0C0;
-            padding: 3px;
-            margin: 2px 0;
-            font-size: 10px;
+            background: rgba(0, 0, 128, 0.8);
+            border: 2px solid rgba(0, 255, 0, 0.5);
+            padding: 6px 8px;
+            margin: 4px 0;
+            font-size: 11px;
+            border-radius: 2px;
+        }
+
+        .api-info div {
+            margin: 3px 0;
+        }
+
+        .api-info span {
+            color: #FFFF00;
+            font-weight: bold;
         }
 
         .economic-display {
             position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: linear-gradient(to bottom, #008000, #004000);
-            border: 3px outset #00FF00;
-            padding: 15px;
+            bottom: 50px;
+            right: 15px;
+            background: rgba(0, 80, 0, 0.95);
+            border: 3px solid #00FF00;
+            padding: 18px;
             z-index: 1000;
-            min-width: 280px;
-            font-size: 12px;
-            box-shadow: 5px 5px 10px #000000;
+            min-width: 300px;
+            font-size: 13px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
             color: #00FF00;
+            border-radius: 4px;
         }
 
         .economic-header {
-            background: #FFFF00;
+            background: linear-gradient(to right, #FFFF00, #FFD700);
             color: #000000;
-            padding: 5px;
+            padding: 8px;
             text-align: center;
             font-weight: bold;
-            margin-bottom: 10px;
-            border: 1px outset #FFFF00;
+            margin-bottom: 12px;
+            border: 2px solid #FFD700;
+            font-size: 13px;
+            border-radius: 3px;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
         }
 
         .economic-item {
             display: flex;
             justify-content: space-between;
-            margin: 5px 0;
-            padding: 3px;
-            background: #000080;
-            border: 1px inset #C0C0C0;
+            margin: 8px 0;
+            padding: 6px 8px;
+            background: rgba(0, 0, 128, 0.8);
+            border: 2px solid rgba(0, 255, 0, 0.5);
+            border-radius: 2px;
         }
 
         .economic-value {
             color: #FFFF00;
             font-weight: bold;
+            text-shadow: 0 0 4px rgba(255, 255, 0, 0.5);
         }
 
         .loading {
@@ -250,23 +284,24 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: linear-gradient(to bottom, #000080, #000040);
-            border: 4px outset #00FF00;
-            padding: 20px;
+            background: rgba(0, 0, 128, 0.98);
+            border: 4px solid #00FF00;
+            padding: 30px;
             text-align: center;
             z-index: 2000;
             color: #FFFF00;
-            box-shadow: 0 0 30px #00FF00;
+            box-shadow: 0 0 40px #00FF00;
+            border-radius: 8px;
         }
 
         .spinner {
-            width: 30px;
-            height: 30px;
-            border: 3px solid #000080;
-            border-top: 3px solid #00FF00;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #004d00;
+            border-top: 4px solid #00FF00;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 15px;
         }
 
         @keyframes spin {
@@ -277,37 +312,44 @@
         .error {
             position: fixed;
             top: 80px;
-            right: 200px;
-            background: linear-gradient(to bottom, #FF0000, #800000);
+            right: 230px;
+            background: rgba(128, 0, 0, 0.95);
             color: #FFFF00;
-            border: 3px outset #FF0000;
-            padding: 10px;
+            border: 3px solid #FF0000;
+            padding: 12px;
             z-index: 1000;
             display: none;
             font-size: 11px;
             max-width: 250px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            border-radius: 4px;
         }
 
         .flight-popup {
             font-family: 'Courier New', monospace;
-            background: #000080;
+            background: rgba(0, 0, 128, 0.98) !important;
             color: #00FF00;
-            border: 2px outset #00FF00;
-            font-size: 11px;
+            border: 3px solid #00FF00 !important;
+            font-size: 12px;
+            border-radius: 4px;
         }
 
         .popup-header {
-            background: #FFFF00;
+            background: linear-gradient(to right, #FFFF00, #FFD700);
             color: #000000;
-            padding: 3px;
+            padding: 6px;
             font-weight: bold;
             text-align: center;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            border-radius: 2px;
+            font-size: 13px;
         }
 
         .popup-row {
-            margin: 2px 0;
-            padding: 1px 3px;
+            margin: 5px 0;
+            padding: 4px 6px;
+            background: rgba(0, 50, 0, 0.5);
+            border-radius: 2px;
         }
 
         .status-bar {
@@ -315,24 +357,29 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(to right, #C0C0C0, #808080);
-            border: 1px inset #C0C0C0;
-            padding: 3px 10px;
-            font-size: 10px;
-            color: #000000;
+            background: linear-gradient(to right, #1a1a1a, #000000);
+            border-top: 2px solid #00FF00;
+            padding: 6px 15px;
+            font-size: 11px;
+            color: #00FF00;
             display: flex;
             justify-content: space-between;
             z-index: 1000;
         }
 
+        .status-bar span {
+            text-shadow: 0 0 4px rgba(0, 255, 0, 0.5);
+        }
+
         .leaflet-popup-content-wrapper {
-            background: #000080 !important;
-            border: 2px outset #00FF00 !important;
+            background: rgba(0, 0, 128, 0.98) !important;
+            border: 3px solid #00FF00 !important;
+            border-radius: 4px !important;
         }
 
         .leaflet-popup-tip {
-            background: #000080 !important;
-            border: 1px solid #00FF00 !important;
+            background: rgba(0, 0, 128, 0.98) !important;
+            border: 2px solid #00FF00 !important;
         }
 
         .matrix-bg {
@@ -343,34 +390,7 @@
             height: 100%;
             pointer-events: none;
             z-index: 0;
-            opacity: 0.1;
-        }
-
-        .wind-heatmap-legend {
-            position: fixed;
-            top: 290px;
-            left: 10px;
-            background: linear-gradient(to bottom, #808080, #404040);
-            border: 3px outset #C0C0C0;
-            padding: 10px;
-            z-index: 1000;
-            min-width: 150px;
-            font-size: 10px;
-            box-shadow: 5px 5px 10px #000000;
-            color: #00FF00;
-        }
-
-        .legend-gradient {
-            height: 80px;
-            width: 20px;
-            background: linear-gradient(to top, 
-                rgba(0, 0, 255, 0.3) 0%,
-                rgba(0, 255, 255, 0.5) 25%,
-                rgba(0, 255, 0, 0.6) 50%,
-                rgba(255, 255, 0, 0.7) 75%,
-                rgba(255, 0, 0, 0.8) 100%);
-            border: 1px solid #00FF00;
-            margin: 5px 0;
+            opacity: 0.08;
         }
 
         @keyframes fall {
@@ -386,7 +406,7 @@
     
     <div class="header">
         <div class="title">
-            <span class="blink">●</span> LIVE GLOBAL FLIGHT TRACKER Y2K <span class="blink">●</span>
+            <span class="blink">●</span> PLANES AND THEIR WINDS: TIME AND FUEL SAVED <span class="blink">●</span>
         </div>
         <div class="legend">
             <div class="legend-item">
@@ -418,7 +438,6 @@
         <div class="control-group">
             <div class="control-label">WIND DISPLAY</div>
             <button id="toggleWind" class="toggle-btn">WIND ARROWS</button>
-            <button id="toggleHeatmap" class="toggle-btn active">WIND HEATMAP</button>
         </div>
         <div class="control-group">
             <div class="control-label">ECONOMIC VIEW</div>
@@ -431,21 +450,6 @@
         </div>
     </div>
 
-    <div class="wind-heatmap-legend" id="heatmapLegend">
-        <div class="control-label">WIND SPEED (KTS)</div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div class="legend-gradient"></div>
-            <div style="font-size: 9px;">
-                <div>50+</div>
-                <div style="margin-top: 10px;">40</div>
-                <div style="margin-top: 10px;">30</div>
-                <div style="margin-top: 10px;">20</div>
-                <div style="margin-top: 10px;">10</div>
-                <div style="margin-top: 8px;">0</div>
-            </div>
-        </div>
-    </div>
-
     <div class="api-status">
         <div class="control-label">API STATUS</div>
         <div class="api-info">
@@ -454,9 +458,8 @@
             <div>FLIGHTS: <span id="flightCount">0</span></div>
             <div>COVERAGE: <span id="coverage">COMMERCIAL</span></div>
         </div>
-        <div style="margin-top: 8px; font-size: 9px; color: #FFFF00;">
-            Using your AviationStack API key<br>
-            for live commercial flight data
+        <div style="margin-top: 10px; font-size: 10px; color: #FFFF00; line-height: 1.4;">
+            Using your AviationStack API key for live commercial flight data
         </div>
     </div>
 
@@ -535,14 +538,14 @@
 
     <div class="loading" id="loading">
         <div class="spinner"></div>
-        <div>CONNECTING TO AVIATIONSTACK API...</div>
-        <div style="font-size: 10px; margin-top: 5px;">LOADING LIVE COMMERCIAL FLIGHT DATA...</div>
+        <div style="font-size: 14px; margin-bottom: 5px;">CONNECTING TO AVIATIONSTACK API...</div>
+        <div style="font-size: 11px; margin-top: 5px;">LOADING LIVE COMMERCIAL FLIGHT DATA...</div>
     </div>
 
     <div class="error" id="error"></div>
 
     <div class="status-bar">
-        <span>FLIGHT RADAR SYSTEM v3.0 | STATUS: <span id="systemStatus">ACTIVE</span></span>
+        <span>FLIGHT ANALYSIS SYSTEM v4.0 | STATUS: <span id="systemStatus">ACTIVE</span></span>
         <span id="dataInfo">LIVE COMMERCIAL DATA - AVIATIONSTACK API</span>
     </div>
 
@@ -553,12 +556,10 @@
                 this.map = null;
                 this.flightLayer = L.layerGroup();
                 this.windLayer = L.layerGroup();
-                this.heatmapLayer = null;
                 this.flights = new Map();
                 this.windData = new Map();
                 this.showFlights = true;
                 this.showWind = false;
-                this.showHeatmap = true;
                 this.showTimeView = true;
                 this.autoRefresh = true;
                 this.refreshInterval = null;
@@ -567,7 +568,6 @@
                 this.zoomLevel = 3;
                 this.currentDataSource = 'aviationstack';
                 
-                // Economic tracking
                 this.economicData = {
                     hoursPerHour: 0,
                     totalHoursToday: 0,
@@ -578,7 +578,6 @@
                     startTime: Date.now()
                 };
                 
-                // Your actual API key from the AviationStack dashboard
                 this.aviationStackKey = '7a2148661bcb35dcab053f4854fa3501';
                 
                 this.init();
@@ -605,12 +604,11 @@
                 });
 
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
-                    attribution: '© GLOBAL SATELLITE NETWORK Y2K',
+                    attribution: '© GLOBAL SATELLITE NETWORK',
                     maxZoom: 18
                 }).addTo(this.map);
 
                 this.flightLayer.addTo(this.map);
-                this.initHeatmap();
 
                 this.map.on('moveend zoomend', () => {
                     this.zoomLevel = this.map.getZoom();
@@ -618,26 +616,10 @@
                     if (this.autoRefresh) {
                         this.loadLiveData();
                     }
-                    this.updateHeatmapVisibility();
                 });
-            }
-
-            initHeatmap() {
-                // Create canvas overlay for wind heatmap
-                const canvas = L.DomUtil.create('canvas');
-                const bounds = [[-90, -180], [90, 180]];
-                this.heatmapLayer = L.imageOverlay(canvas.toDataURL(), bounds, {
-                    opacity: 0.4,
-                    interactive: false
-                });
-                
-                if (this.showHeatmap) {
-                    this.heatmapLayer.addTo(this.map);
-                }
             }
 
             setupControls() {
-                // API source selection
                 document.getElementById('aviationStackBtn').addEventListener('click', () => {
                     this.switchDataSource('aviationstack');
                 });
@@ -650,7 +632,6 @@
                     this.switchDataSource('realtime');
                 });
 
-                // Display toggles
                 document.getElementById('toggleFlights').addEventListener('click', () => {
                     this.showFlights = !this.showFlights;
                     this.toggleLayer(this.flightLayer, this.showFlights, 'toggleFlights');
@@ -659,14 +640,11 @@
                 document.getElementById('toggleWind').addEventListener('click', () => {
                     this.showWind = !this.showWind;
                     this.toggleLayer(this.windLayer, this.showWind, 'toggleWind');
+                    if (this.showWind && this.windData.size === 0) {
+                        this.loadWindData();
+                    }
                 });
 
-                document.getElementById('toggleHeatmap').addEventListener('click', () => {
-                    this.showHeatmap = !this.showHeatmap;
-                    this.toggleHeatmap();
-                });
-
-                // Economic view toggles
                 document.getElementById('toggleTimeView').addEventListener('click', () => {
                     this.showTimeView = true;
                     this.updateEconomicDisplay();
@@ -717,28 +695,6 @@
                 }
             }
 
-            toggleHeatmap() {
-                const btn = document.getElementById('toggleHeatmap');
-                if (this.showHeatmap) {
-                    this.heatmapLayer.addTo(this.map);
-                    btn.classList.add('active');
-                    document.getElementById('heatmapLegend').style.display = 'block';
-                } else {
-                    this.map.removeLayer(this.heatmapLayer);
-                    btn.classList.remove('active');
-                    document.getElementById('heatmapLegend').style.display = 'none';
-                }
-            }
-
-            updateHeatmapVisibility() {
-                const legend = document.getElementById('heatmapLegend');
-                if (this.showHeatmap) {
-                    legend.style.display = 'block';
-                } else {
-                    legend.style.display = 'none';
-                }
-            }
-
             async loadLiveData() {
                 try {
                     document.getElementById('apiStatus').textContent = 'FETCHING...';
@@ -749,7 +705,6 @@
                     ]);
                     
                     this.updateStats();
-                    this.updateWindHeatmap();
                     document.getElementById('apiStatus').textContent = 'ONLINE';
                     
                 } catch (error) {
@@ -962,16 +917,18 @@
                     {from: [25.25, 55.36], to: [1.35, 103.82], fromCode: 'DXB', toCode: 'SIN', airline: 'EK', country: 'UAE', aircraft: 'A388'},
                     {from: [33.94, -118.41], to: [22.31, 114.17], fromCode: 'LAX', toCode: 'HKG', airline: 'CX', country: 'USA', aircraft: 'B77W'},
                     {from: [52.31, 4.77], to: [40.64, -73.78], fromCode: 'AMS', toCode: 'JFK', airline: 'KLM', country: 'Netherlands', aircraft: 'B789'},
-                    {from: [48.86, 2.35], to: [25.25, 55.36], fromCode: 'CDG', toCode: 'DXB', airline: 'AFR', country: 'France', aircraft: 'A359'}
+                    {from: [48.86, 2.35], to: [25.25, 55.36], fromCode: 'CDG', toCode: 'DXB', airline: 'AFR', country: 'France', aircraft: 'A359'},
+                    {from: [-33.94, 151.18], to: [-37.67, 144.84], fromCode: 'SYD', toCode: 'MEL', airline: 'QFA', country: 'Australia', aircraft: 'B738'},
+                    {from: [13.68, 100.75], to: [1.35, 103.82], fromCode: 'BKK', toCode: 'SIN', airline: 'THA', country: 'Thailand', aircraft: 'A359'},
+                    {from: [55.97, 37.41], to: [59.80, 30.26], fromCode: 'SVO', toCode: 'LED', airline: 'AFL', country: 'Russia', aircraft: 'A321'},
+                    {from: [19.43, -99.07], to: [25.77, -80.29], fromCode: 'MEX', toCode: 'MIA', airline: 'AMX', country: 'Mexico', aircraft: 'B738'}
                 ];
             }
 
             async loadWindData() {
-                // Generate comprehensive wind data based on current flights
                 this.windData.clear();
                 this.windLayer.clearLayers();
 
-                // Create wind grid based on zoom level
                 const gridSize = this.zoomLevel > 6 ? 5 : 15;
                 const bounds = this.lastBounds || this.map.getBounds();
 
@@ -989,24 +946,22 @@
 
             generateRealisticWind(lat, lon) {
                 const now = Date.now();
-                const timeVariation = Math.sin(now / 3600000) * 20; // Hourly variation
+                const timeVariation = Math.sin(now / 3600000) * 20;
                 const seasonalVariation = Math.sin((new Date().getMonth() / 12) * Math.PI * 2) * 15;
                 
-                // Base wind patterns based on latitude
                 let baseDirection, baseSpeed;
                 
-                if (Math.abs(lat) < 30) { // Trade winds
+                if (Math.abs(lat) < 30) {
                     baseDirection = lat > 0 ? 225 : 135;
                     baseSpeed = 15 + Math.random() * 10;
-                } else if (Math.abs(lat) > 60) { // Polar easterlies
+                } else if (Math.abs(lat) > 60) {
                     baseDirection = 90;
                     baseSpeed = 12 + Math.random() * 8;
-                } else { // Westerlies
+                } else {
                     baseDirection = 270;
                     baseSpeed = 20 + Math.random() * 15;
                 }
 
-                // Add variations
                 baseDirection += timeVariation + seasonalVariation + (Math.random() - 0.5) * 40;
                 baseSpeed += (Math.random() - 0.5) * 10;
 
@@ -1019,64 +974,7 @@
                 };
             }
 
-            updateWindHeatmap() {
-                if (!this.showHeatmap) return;
-
-                // Create canvas for heatmap
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = 512;
-                canvas.height = 256;
-
-                // Create image data
-                const imageData = ctx.createImageData(512, 256);
-                const data = imageData.data;
-
-                // Fill heatmap based on wind data
-                for (let y = 0; y < 256; y++) {
-                    for (let x = 0; x < 512; x++) {
-                        const lat = 90 - (y / 256) * 180;
-                        const lon = (x / 512) * 360 - 180;
-                        
-                        const windData = this.getInterpolatedWind(lat, lon);
-                        const intensity = Math.min(windData.speed / 50, 1);
-                        
-                        const index = (y * 512 + x) * 4;
-                        
-                        // Color based on wind speed
-                        if (intensity < 0.2) {
-                            data[index] = 0; data[index + 1] = 0; data[index + 2] = 255; // Blue
-                        } else if (intensity < 0.4) {
-                            data[index] = 0; data[index + 1] = 255; data[index + 2] = 255; // Cyan
-                        } else if (intensity < 0.6) {
-                            data[index] = 0; data[index + 1] = 255; data[index + 2] = 0; // Green
-                        } else if (intensity < 0.8) {
-                            data[index] = 255; data[index + 1] = 255; data[index + 2] = 0; // Yellow
-                        } else {
-                            data[index] = 255; data[index + 1] = 0; data[index + 2] = 0; // Red
-                        }
-                        
-                        data[index + 3] = Math.round(intensity * 180); // Alpha
-                    }
-                }
-
-                ctx.putImageData(imageData, 0, 0);
-                
-                // Update heatmap layer
-                const bounds = [[-90, -180], [90, 180]];
-                this.map.removeLayer(this.heatmapLayer);
-                this.heatmapLayer = L.imageOverlay(canvas.toDataURL(), bounds, {
-                    opacity: 0.4,
-                    interactive: false
-                });
-                
-                if (this.showHeatmap) {
-                    this.heatmapLayer.addTo(this.map);
-                }
-            }
-
             getInterpolatedWind(lat, lon) {
-                // Find nearest wind data points and interpolate
                 let nearestWind = null;
                 let minDistance = Infinity;
 
@@ -1131,31 +1029,26 @@
 
             calculateTimeSaving(type, windComponent) {
                 if (type === 'tailwind') {
-                    // Tailwind increases ground speed, reducing flight time
-                    return windComponent / 500 * 60; // minutes saved per flight
+                    return windComponent / 500 * 60;
                 } else if (type === 'headwind') {
-                    // Headwind decreases ground speed, increasing flight time
-                    return -(windComponent / 500 * 60); // minutes lost per flight
+                    return -(windComponent / 500 * 60);
                 }
-                return 0; // Crosswind has minimal time impact
+                return 0;
             }
 
             calculateFuelSaving(type, windComponent) {
                 if (type === 'tailwind') {
-                    // Tailwind reduces fuel consumption
-                    return windComponent / 10; // gallons saved per flight
+                    return windComponent / 10;
                 } else if (type === 'headwind') {
-                    // Headwind increases fuel consumption
-                    return -(windComponent / 10); // gallons extra per flight
+                    return -(windComponent / 10);
                 }
-                return windComponent / 20; // Crosswind slightly increases fuel usage
+                return windComponent / 20;
             }
 
             createFlightMarker(flight) {
                 const nearestWind = this.getInterpolatedWind(flight.lat, flight.lon);
                 const windEffect = this.calculateWindEffect(flight.heading, nearestWind.direction, nearestWind.speed);
                 
-                // Update economic tracking
                 this.updateEconomicTracking(windEffect);
                 
                 let color;
@@ -1169,7 +1062,7 @@
                 
                 const aircraftIcon = L.divIcon({
                     className: 'aircraft-icon',
-                    html: `<div style="color: ${color}; font-size: ${altitudeSize}px; transform: rotate(${flight.heading}deg); text-shadow: 1px 1px 2px #000;">✈</div>`,
+                    html: `<div style="color: ${color}; font-size: ${altitudeSize}px; transform: rotate(${flight.heading}deg); text-shadow: 0 0 6px ${color}, 1px 1px 3px #000;">✈</div>`,
                     iconSize: [altitudeSize + 4, altitudeSize + 4],
                     iconAnchor: [(altitudeSize + 4)/2, (altitudeSize + 4)/2]
                 });
@@ -1187,18 +1080,18 @@
                 const popupContent = `
                     <div class="flight-popup">
                         <div class="popup-header">${flight.callsign}</div>
-                        <div class="popup-row">AIRLINE: ${flight.airline || 'Unknown'}</div>
-                        <div class="popup-row">ROUTE: ${flight.departure} → ${flight.arrival}</div>
-                        <div class="popup-row">AIRCRAFT: ${flight.aircraft || 'Unknown'}</div>
-                        <div class="popup-row">ALTITUDE: ${flight.altitude.toLocaleString()} FT</div>
-                        <div class="popup-row">SPEED: ${flight.velocity} KTS</div>
-                        <div class="popup-row">HEADING: ${flight.heading}°</div>
-                        <div class="popup-row">WIND EFFECT: <span style="color: ${color};">${windEffect.type.toUpperCase()}</span></div>
-                        <div class="popup-row">WIND: ${nearestWind.speed} KTS @ ${nearestWind.direction}°</div>
-                        <div class="popup-row">COMPONENT: ${Math.round(windEffect.component)} KTS</div>
-                        <div class="popup-row">TIME: ${timeSavingText}</div>
-                        <div class="popup-row">FUEL: ${fuelSavingText}</div>
-                        <div class="popup-row">SOURCE: ${flight.source}</div>
+                        <div class="popup-row"><strong>AIRLINE:</strong> ${flight.airline || 'Unknown'}</div>
+                        <div class="popup-row"><strong>ROUTE:</strong> ${flight.departure} → ${flight.arrival}</div>
+                        <div class="popup-row"><strong>AIRCRAFT:</strong> ${flight.aircraft || 'Unknown'}</div>
+                        <div class="popup-row"><strong>ALTITUDE:</strong> ${flight.altitude.toLocaleString()} FT</div>
+                        <div class="popup-row"><strong>SPEED:</strong> ${flight.velocity} KTS</div>
+                        <div class="popup-row"><strong>HEADING:</strong> ${flight.heading}°</div>
+                        <div class="popup-row"><strong>WIND EFFECT:</strong> <span style="color: ${color}; font-weight: bold;">${windEffect.type.toUpperCase()}</span></div>
+                        <div class="popup-row"><strong>WIND:</strong> ${nearestWind.speed} KTS @ ${nearestWind.direction}°</div>
+                        <div class="popup-row"><strong>COMPONENT:</strong> ${Math.round(windEffect.component)} KTS</div>
+                        <div class="popup-row"><strong>TIME:</strong> <span style="color: #FFFF00;">${timeSavingText}</span></div>
+                        <div class="popup-row"><strong>FUEL:</strong> <span style="color: #FFFF00;">${fuelSavingText}</span></div>
+                        <div class="popup-row"><strong>SOURCE:</strong> ${flight.source}</div>
                     </div>
                 `;
 
@@ -1212,7 +1105,7 @@
                 
                 const windIcon = L.divIcon({
                     className: 'wind-arrow-icon',
-                    html: `<div style="color: rgba(0, 255, 255, ${opacity}); font-size: ${windSize}px; transform: rotate(${wind.direction}deg); text-shadow: 1px 1px 2px #000;">➤</div>`,
+                    html: `<div style="color: rgba(0, 255, 255, ${opacity}); font-size: ${windSize}px; transform: rotate(${wind.direction}deg); text-shadow: 0 0 6px rgba(0, 255, 255, ${opacity}), 1px 1px 2px #000;">➤</div>`,
                     iconSize: [windSize + 2, windSize + 2],
                     iconAnchor: [(windSize + 2)/2, (windSize + 2)/2]
                 });
@@ -1222,9 +1115,9 @@
                 marker.bindPopup(`
                     <div class="flight-popup">
                         <div class="popup-header">WIND DATA</div>
-                        <div class="popup-row">DIRECTION: ${wind.direction}°</div>
-                        <div class="popup-row">SPEED: ${wind.speed} KTS</div>
-                        <div class="popup-row">COORDINATES: ${wind.lat.toFixed(2)}°, ${wind.lon.toFixed(2)}°</div>
+                        <div class="popup-row"><strong>DIRECTION:</strong> ${wind.direction}°</div>
+                        <div class="popup-row"><strong>SPEED:</strong> ${wind.speed} KTS</div>
+                        <div class="popup-row"><strong>LAT/LON:</strong> ${wind.lat.toFixed(2)}°, ${wind.lon.toFixed(2)}°</div>
                     </div>
                 `);
 
@@ -1232,11 +1125,11 @@
             }
 
             updateEconomicTracking(windEffect) {
-                const hoursPerFlight = 3.5; // Average flight duration
+                const hoursPerFlight = 3.5;
                 const timeSavingHours = windEffect.timeSaving / 60;
                 const fuelSaving = windEffect.fuelSaving;
 
-                this.economicData.hoursPerHour += timeSavingHours * (60 / hoursPerFlight); // Scale by flights per hour
+                this.economicData.hoursPerHour += timeSavingHours * (60 / hoursPerFlight);
                 this.economicData.fuelPerHour += fuelSaving * (60 / hoursPerFlight);
             }
 
@@ -1251,7 +1144,6 @@
                 const now = Date.now();
                 const hoursElapsed = (now - this.economicData.startTime) / 3600000;
                 
-                // Accumulate daily and monthly totals
                 this.economicData.totalHoursToday += this.economicData.hoursPerHour / 3600;
                 this.economicData.totalHoursMonth += this.economicData.hoursPerHour / 3600;
                 this.economicData.totalFuelToday += this.economicData.fuelPerHour / 3600;
@@ -1292,10 +1184,10 @@
                     document.getElementById('totalFuelToday').textContent = `${Math.round(this.economicData.totalFuelToday).toLocaleString()} gal`;
                     document.getElementById('totalFuelMonth').textContent = `${Math.round(this.economicData.totalFuelMonth).toLocaleString()} gal`;
                     
-                    const costSaved = this.economicData.totalFuelToday * 3.50; // $3.50 per gallon
+                    const costSaved = this.economicData.totalFuelToday * 3.50;
                     document.getElementById('costSavedToday').textContent = `${Math.round(costSaved).toLocaleString()}`;
                     
-                    const co2Reduced = this.economicData.totalFuelToday * 0.021; // 21 lbs CO2 per gallon
+                    const co2Reduced = this.economicData.totalFuelToday * 0.021;
                     document.getElementById('co2Reduced').textContent = `${(co2Reduced / 2000).toFixed(1)} tons`;
                 }
             }
@@ -1326,7 +1218,7 @@
 
             startAutoRefresh() {
                 this.stopAutoRefresh();
-                const refreshRate = this.currentDataSource === 'aviationstack' ? 60000 : 30000; // 1 min for real API
+                const refreshRate = this.currentDataSource === 'aviationstack' ? 60000 : 30000;
                 this.refreshInterval = setInterval(() => {
                     if (this.autoRefresh) {
                         this.loadLiveData();
@@ -1379,11 +1271,10 @@
                 }, 120);
             }
         }
-//changed
-        // Initialize the enhanced flight tracker
+
         window.addEventListener('load', () => {
             new EnhancedFlightTracker();
         });
     </script>
 </body>
-</html> 
+</html>
